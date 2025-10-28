@@ -1,6 +1,7 @@
 from typing import List, Dict, Union
 from requirements import REQUIREMENTS
 from prereq_check import has_taken, verify_prereq_code
+import random
 
 '''
 returns all courses in a given category that user hasnt taken yet
@@ -47,12 +48,13 @@ recommendation service, first checks if category is provided
 if category is provided then returns up to 4 recs in that category
 if category not specified then returns a dict w 2 recs from each category
 '''
+
 def recommend_courses(
         college: str, 
         transcipt_codes: List[str], 
         category: str | None = None, 
         per_category_limit: int = 2, 
-        category_limit: int = 4
+        category_limit: int = 4,
     ) -> Union[List[str], Dict[str, List[str]]]:
     
     # Normalize and validate input
@@ -65,32 +67,24 @@ def recommend_courses(
     print(f"User completed courses: {user_codes}")
 
     # If specific category requested
+    def random_choices(category_name: str, max_pick: int) -> List[str]:
+        # everything that hasnt been taken
+        pool = courses_eligible(user_codes, college, category_name)
+        pool = [code for code in pool if verify_prereq_code(user_codes, code)]
+        print(f"POOL FOR {category_name}: {pool}")
+        if not pool:
+            return []
+        pick_count = min(max_pick, len(pool))
+        random.seed()
+        picks = random.sample(pool, pick_count)
+        print(f"PICKS FOR {category_name}: {picks}")
+        return picks
+    
     if category:
-        choices = courses_eligible(user_codes, college, category)
-        print(f"Available courses in {category}: {choices}")
-        
-        selection = []
-        for code in choices:
-            if verify_prereq_code(user_codes, code):
-                selection.append(code)
-                if len(selection) >= category_limit:
-                    break
-        print(f"Selected courses (with prereqs met): {selection}")
-        return selection
+        return random_choices(category, category_limit)
     
-    # For all categories
     result: Dict[str, List[str]] = {}
-    for cat in ["Core", "GenEd", "Elective/eligible"]:
-        choices = courses_eligible(user_codes, college, cat)
-        print(f"Available courses in {cat}: {choices}")
-        
-        selection = []
-        for code in choices:
-            if verify_prereq_code(user_codes, code):
-                selection.append(code)
-                if len(selection) >= per_category_limit:
-                    break
-        result[cat] = selection
-        print(f"Selected courses for {cat}: {selection}")
-    
+    for category_name in ["Core", "GenEd", "Elective/eligible"]:
+        result[category_name] = random_choices(category_name, per_category_limit)
+
     return result
