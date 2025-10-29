@@ -58,8 +58,6 @@
 }
 
 .course-card {
-  background: linear-gradient(135deg, var(--secondary-lavender), var(--secondary-lavender-light));
-  border: 2px solid var(--secondary-lavender-dark);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
   cursor: grab;
@@ -69,12 +67,37 @@
   z-index: 1;
 }
 
-.course-card:hover {
-  transform: translateX(5px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-purple-light);
-  z-index: 100;
+.course-card.core {
+  background: linear-gradient(135deg, #c3b4f3, #e3d9ff);
+  border: 2px solid #9d7af5;
 }
+
+.course-card.elective {
+  background: linear-gradient(135deg, #9fd8df, #c8f1f5);
+  border: 2px solid #6bbbc6;
+}
+
+.course-card.gened {
+  background: linear-gradient(135deg,#66f99e, #7eebad);
+  border: 2px solid #79e37a;
+}
+
+/* Hover effects */
+.course-card.core:hover {
+  border-color: #b197f5;
+  box-shadow: 0 4px 12px rgba(157, 122, 245, 0.3);
+}
+
+.course-card.elective:hover {
+  border-color: #63c1cd;
+  box-shadow: 0 4px 12px rgba(107, 187, 198, 0.3);
+}
+
+.course-card.gened:hover {
+  border-color: #79e37a;
+  box-shadow: 0 4px 12px rgba(243, 164, 101, 0.3);
+}
+
 
 .course-card:active {
   cursor: grabbing;
@@ -281,42 +304,12 @@
 
 .schedule-cell {
   position: relative;
-  min-height: 20px;
+  height: 80px; /* base slot height */
   transition: background var(--transition-fast);
+  overflow: visible; /* allow overlapping course blocks to show outside */
 }
 
-.schedule-cell.drag-over {
-  background: var(--secondary-lavender-light);
-  border: 2px dashed var(--primary-purple-light);
-}
 
-.scheduled-course {
-  background: linear-gradient(135deg, var(--primary-purple-light), var(--primary-purple-subtle));
-  color: var(--neutral-white);
-  border-radius: var(--radius-md);
-  padding: var(--space-2);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  cursor: pointer;
-}
-
-.scheduled-course:hover {
-  opacity: 0.9;
-}
-
-.scheduled-course .course-code {
-  color: var(--neutral-white);
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-}
-
-.scheduled-course .course-name {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: var(--text-xs);
-}
 
 .remove-course {
   position: absolute;
@@ -463,10 +456,6 @@
   margin-top: 2px;
 }
 
-.scheduled-course .course-instructor {
-  font-size: var(--text-xs);
-  color: #9ca3af;
-}
 
 /* Saved Schedules Section - Right Sidebar */
 .saved-schedules-section {
@@ -1068,6 +1057,7 @@
   border: 2px dashed #a68fb5;
 }
 
+
 .scheduled-course {
   background: linear-gradient(135deg, #a68fb5, #c3b0d5);
   color: white;
@@ -1081,20 +1071,47 @@
   cursor: pointer;
 }
 
+.scheduled-course .course-instructor {
+  font-size: var(--text-xs);
+  color: #9ca3af;
+}
+
 .scheduled-course:hover {
   opacity: 0.9;
 }
 
+/* Category-specific themes (match sidebar colors) */
+.scheduled-course.core {
+  background: linear-gradient(135deg, #c3b4f3, #e3d9ff);
+  border: 2px solid #9d7af5;
+  color: #2c1365;
+}
+
+.scheduled-course.elective {
+  background: linear-gradient(135deg, #9fd8df, #c8f1f5);
+  border: 2px solid #6bbbc6;
+  color: #043f44;
+}
+
+.scheduled-course.gened {
+  background: linear-gradient(135deg, #66f99e, #7eebad);
+  border: 2px solid #79e37a;
+  color: #5e2a00;
+}
+
+
 .scheduled-course .course-code {
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 700;
+  color: var(--neutral-white);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
 }
 
 .scheduled-course .course-name {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
+
+
 
 .remove-course {
   position: absolute;

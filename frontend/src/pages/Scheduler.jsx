@@ -101,15 +101,15 @@ export default function Scheduler() {
           const formattedCourses = {
             "Core Classes": (data.recommendations.Core || []).map(code => {
               const timeInfo = generateRandomTime();
-              // Fetch course info for each course
               fetchCourseInfo(code);
               return {
                 code,
                 name: `Course ${code}`,
                 credits: 3,
                 instructor: "TBD",
-                timeInfo: timeInfo,
-                time: `${timeInfo.days.map(d => d.slice(0, 2)).join('')} ${timeInfo.startTime}`
+                timeInfo,
+                time: `${timeInfo.days.map(d => d.slice(0, 2)).join('')} ${timeInfo.startTime}`,
+                category: "core"
               };
             }),
             "Technical Electives": (data.recommendations["Elective/eligible"] || []).map(code => {
@@ -120,8 +120,9 @@ export default function Scheduler() {
                 name: `Course ${code}`,
                 credits: 3,
                 instructor: "TBD",
-                timeInfo: timeInfo,
-                time: `${timeInfo.days.map(d => d.slice(0, 2)).join('')} ${timeInfo.startTime}`
+                timeInfo,
+                time: `${timeInfo.days.map(d => d.slice(0, 2)).join('')} ${timeInfo.startTime}`,
+                category: "elective"
               };
             }),
             "General Education": (data.recommendations.GenEd || []).map(code => {
@@ -132,11 +133,13 @@ export default function Scheduler() {
                 name: `Course ${code}`,
                 credits: 3,
                 instructor: "TBD",
-                timeInfo: timeInfo,
-                time: `${timeInfo.days.map(d => d.slice(0, 2)).join('')} ${timeInfo.startTime}`
+                timeInfo,
+                time: `${timeInfo.days.map(d => d.slice(0, 2)).join('')} ${timeInfo.startTime}`,
+                category: "gened"
               };
             })
           };
+
           console.log('Formatted courses:', formattedCourses);
           setCourseCategories(formattedCourses);
         } else {
@@ -400,55 +403,56 @@ const handlePriorityChange = (scheduleId, direction) => {
             </div>
 
             {Object.entries(filteredCategories).map(([category, courses]) => (
-              <div key={category} className="course-category">
-                <div className="category-title">{category}</div>
-                <div className="course-list">
-                  {courses.map((course) => (
-                    <div
-                      key={course.code}
-                      className="course-card"
-                      draggable
-                      onDragStart={() => handleDragStart(course)}
-                      onClick={() => handleCourseClick(course)}
-                    >
-                      <div className="course-code">
-                        <span>{course.code}</span>
-                        <div 
-                          className="info-icon"
-                          onMouseEnter={(e) => e.stopPropagation()}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          i
-                          <div className="info-tooltip">
-                            <div className="tooltip-title">{course.code}</div>
-                            <div className="tooltip-content">
-                              <div className="tooltip-row">
-                                <span className="tooltip-label">Name: </span>
-                                {course.name}
-                              </div>
-                              <div className="tooltip-row">
-                                <span className="tooltip-label">Credits: </span>
-                                {course.credits}
-                              </div>
-                              <div className="tooltip-row">
-                                <span className="tooltip-label">Instructor: </span>
-                                {course.instructor}
-                              </div>
-                              <div className="tooltip-row">
-                                <span className="tooltip-label">Time: </span>
-                                {course.time}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="course-name">{course.name}</div>
-                      <div className="course-credits">{course.credits} credits • {course.time}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+  <div key={category} className="course-category">
+    <div className="category-title">{category}</div>
+    <div className="course-list">
+      {courses.map((course) => (
+        <div
+          key={course.code}
+          className={`course-card ${category === "Core Classes" 
+            ? "core" 
+            : category === "Technical Electives" 
+            ? "elective" 
+            : "gened"}`}
+          draggable
+          onDragStart={() => handleDragStart(course)}
+          onClick={() => handleCourseClick(course)}
+        >
+          <div className="course-code">
+            <span>{course.code}</span>
+            <div 
+              className="info-icon"
+              onMouseEnter={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
+              i
+              <div className="info-tooltip">
+                <div className="tooltip-title">{course.code}</div>
+                <div className="tooltip-content">
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Name: </span>{course.name}
+                  </div>
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Credits: </span>{course.credits}
+                  </div>
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Instructor: </span>{course.instructor}
+                  </div>
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Time: </span>{course.time}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="course-name">{course.name}</div>
+          <div className="course-credits">{course.credits} credits • {course.time}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+))}
+
           </div>
           </div>
           
@@ -496,24 +500,36 @@ const handlePriorityChange = (scheduleId, direction) => {
                       onDrop={() => handleDrop(day, time)}
                     >
                       {course && (
-                        <div className="scheduled-course">
-                          <button
-                            className="remove-course"
-                            onClick={(e) => handleRemoveCourse(course.code, e)}
-                          >
-                            ×
-                          </button>
-                          <div>
-                            <div className="course-code">{course.code}</div>
-                            <div className="course-name">
-                              {courseInfo[course.code]?.name || course.name}
-                            </div>
-                            <div className="course-instructor">
-                              {courseInfo[course.code]?.instructor || course.instructor}
-                            </div>
-                          </div>
-                        </div>
-                      )}
+  <div
+    className={`scheduled-course ${course.category}`}
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: `${(course.duration || 1) * 80}px`, // dynamic height
+      zIndex: 10, // ensures it floats above the grid
+    }}
+  >
+    <button
+      className="remove-course"
+      onClick={(e) => handleRemoveCourse(course.code, e)}
+    >
+      ×
+    </button>
+    <div>
+      <div className="course-code">{course.code}</div>
+      <div className="course-name">
+        {courseInfo[course.code]?.name || course.name}
+      </div>
+      <div className="course-instructor">
+        {courseInfo[course.code]?.instructor || course.instructor}
+      </div>
+    </div>
+  </div>
+)}
+
+
                     </div>
                   );
                 })}
