@@ -108,22 +108,22 @@ const Navigation = () => {
                   Help
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link 
                   to="/signin" 
                   className={`navbar-link ${isActive('/signin') ? 'active' : ''}`}
                 >
                   Sign In
                 </Link>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <Link 
                   to="/signup" 
                   className="btn btn-primary btn-sm"
                 >
                   Sign Up
                 </Link>
-              </li>
+              </li> */}
             </>
           )}
         </ul>

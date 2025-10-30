@@ -131,73 +131,151 @@ def update_user_info():
     db.session.commit()
     return jsonify({'message': 'User info updated successfully'})
 
-# @app.route('/save-transcript', methods=['POST'])
-# def save_transcript():
-#     data = request.get_json()
-#     user_id = data.get('user_id')
-#     classes = data.get('classes', [])  # list of course codes like ['COP3502', 'CDA3101']
+#code to save schedule to database
+# Add these routes to your app.py
 
-#     # validate user exists
-#     user = User.query.get(user_id)
-#     if not user:
-#         return jsonify({'error': 'User not found'}), 404
+@app.route('/save-schedule', methods=['POST'])
+def save_schedule():
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        schedule_name = data.get('name')
+        schedule_data = data.get('schedule')  # The schedule object from frontend
+        
+        print(f"Debug - Saving schedule: user_id={user_id}, name={schedule_name}")
+        print(f"Debug - Schedule data keys: {list(schedule_data.keys()) if schedule_data else 'None'}")
+        
+        if not user_id or not schedule_name or not schedule_data:
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Verify user exists
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Create new schedule
+        new_schedule = UserSchedule(
+            user_id=user_id,
+            name=schedule_name
+        )
+        db.session.add(new_schedule)
+        db.session.flush()  # Get the schedule_id
+        
+        print(f"Debug - Created schedule with ID: {new_schedule.schedule_id}")
+        
+        # Save each course in the schedule
+        for time_slot, course_data in schedule_data.items():
+            if course_data:  # If there's a course in this time slot
+                print(f"Debug - Processing time slot: {time_slot}, course: {course_data.get('code')}")
+                
+                # Parse the time slot (e.g., "Monday-9:00 AM")
+                try:
+                    day, time = time_slot.split('-')
+                except ValueError:
+                    print(f"Warning - Invalid time slot format: {time_slot}")
+                    continue
+                
+                # Find or create the course
+                course = Course.query.filter_by(course_code=course_data['code']).first()
+                if not course:
+                    course = Course(
+                        course_code=course_data['code'],
+                        course_name=course_data.get('name', f"Course {course_data['code']}"),
+                        credits=course_data.get('credits', 3),
+                        professor=course_data.get('instructor', 'TBD')
+                    )
+                    db.session.add(course)
+                    db.session.flush()
+                    print(f"Debug - Created new course: {course.course_code}")
+                
+                # Create schedule course entry
+                schedule_course = ScheduleCourse(
+                    schedule_id=new_schedule.schedule_id,
+                    course_id=course.course_id,
+                    day_of_week=day,
+                    start_time=time
+                )
+                db.session.add(schedule_course)
+                print(f"Debug - Added schedule course: {course.course_code} on {day} at {time}")
+        
+        db.session.commit()
+        print(f"Debug - Successfully saved schedule with {len([k for k, v in schedule_data.items() if v])} courses")
+        
+        return jsonify({
+            'message': 'Schedule saved successfully',
+            'schedule_id': new_schedule.schedule_id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving schedule: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to save schedule: {str(e)}'}), 500
+    
+    
+@app.route('/get-user-schedules/<int:user_id>', methods=['GET'])
+def get_user_schedules(user_id):
+    try:
+        # Get all schedules for the user
+        schedules = UserSchedule.query.filter_by(user_id=user_id).all()
+        
+        result = []
+        for schedule in schedules:
+            # Get courses for this schedule
+            schedule_courses = db.session.query(ScheduleCourse, Course).join(
+                Course, ScheduleCourse.course_id == Course.course_id
+            ).filter(ScheduleCourse.schedule_id == schedule.schedule_id).all()
+            
+            # Reconstruct the schedule object
+            schedule_data = {}
+            total_credits = 0
+            unique_courses = set()
+            
+            for sched_course, course in schedule_courses:
+                time_slot = f"{sched_course.day_of_week}-{sched_course.start_time}"
+                schedule_data[time_slot] = {
+                    'code': course.course_code,
+                    'name': course.course_name or f"Course {course.course_code}",
+                    'credits': course.credits or 3,
+                    'instructor': course.professor or 'TBD',
+                    'time': sched_course.start_time
+                }
+                unique_courses.add(course.course_code)
+                total_credits += course.credits or 3
+            
+            result.append({
+                'id': schedule.schedule_id,
+                'name': schedule.name,
+                'schedule': schedule_data,
+                'credits': total_credits,
+                'courses': len(unique_courses),
+                'created_at': schedule.created_at.isoformat() if schedule.created_at else None
+            })
+        
+        return jsonify({'schedules': result})
+        
+    except Exception as e:
+        print(f"Error getting user schedules: {str(e)}")
+        return jsonify({'error': 'Failed to get schedules'}), 500
 
-#     # normalize: strip whitespace, uppercase; preserve order and dedupe
-#     normalized = []
-#     seen = set()
-#     for raw in classes:
-#         if raw is None:
-#             continue
-#         code = re.sub(r"\s+", "", str(raw)).upper()
-#         if not code:
-#             continue
-#         if code in seen:
-#             continue
-#         seen.add(code)
-#         normalized.append(code)
-
-#     saved_count = 0
-#     try:
-#         for code in normalized:
-#             # find or create course
-#             course = Course.query.filter_by(course_code=code).first()
-#             if not course:
-#                 course = Course(course_code=code)
-#                 db.session.add(course)
-#                 db.session.flush()
-
-#             # Link to user if not exists
-#             exists = UserCompletedCourse.query.filter_by(user_id=user_id, course_id=course.course_id).first()
-#             if not exists:
-#                 db.session.add(UserCompletedCourse(user_id=user_id, course_id=course.course_id))
-#                 saved_count += 1
-
-#         db.session.commit()
-#     except Exception as e:
-#         db.session.rollback()
-#         return jsonify({'error': 'Failed to save transcript', 'details': str(e)}), 500
-
-#     return jsonify({'message': f'{saved_count} courses saved to user record', 'saved_count': saved_count})
-
-
-# @app.route('/db-info', methods=['GET'])
-# def db_info():
-#     # simple diagnostics to help debug permission/owner issues (local dev only)
-#     try:
-#         result = db.session.execute("SELECT current_user, session_user").first()
-#         current_user, session_user = result[0], result[1]
-
-#         owner_row = db.session.execute("SELECT tableowner FROM pg_tables WHERE tablename='users'").first()
-#         table_owner = owner_row[0] if owner_row else None
-
-#         grants = db.session.execute("SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='users'").fetchall()
-#         grants_list = [{'grantee': r[0], 'privilege': r[1]} for r in grants]
-
-#         return jsonify({'current_user': current_user, 'session_user': session_user, 'users_table_owner': table_owner, 'users_table_grants': grants_list})
-#     except Exception as e:
-#         return jsonify({'error': 'Failed to get db info', 'details': str(e)}), 500
-
-# # Run server
+@app.route('/delete-schedule/<int:schedule_id>', methods=['DELETE'])
+def delete_schedule(schedule_id):
+    try:
+        schedule = UserSchedule.query.get(schedule_id)
+        if not schedule:
+            return jsonify({'error': 'Schedule not found'}), 404
+        
+        # Delete associated schedule courses (should cascade automatically)
+        db.session.delete(schedule)
+        db.session.commit()
+        
+        return jsonify({'message': 'Schedule deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting schedule: {str(e)}")
+        return jsonify({'error': 'Failed to delete schedule'}), 500
 
 @app.route('/get-course-info/<course_code>', methods=['GET'])
 def get_course_info_endpoint(course_code):
