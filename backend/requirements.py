@@ -77,10 +77,12 @@ REQUIREMENTS = {
             "MAC2313",
             ["MAS3114", "MAS4105"],  # choose one linear algebra
             "STA3032",
-            ["PHY2048", "PHY2053"],   # Physics 1 (choose w or without calc)
-            ["PHY2048L", "PHY2053L"],
-            ["PHY2049", "PHY2054"],   # Physics 2 (choose w or without calc)
-            ["PHY2098L", "PHY2054L"],
+            # ["PHY2048", "PHY2053"],   # Physics 1 (choose w or without calc)
+            # ["PHY2048L", "PHY2053L"],
+            # ["PHY2049", "PHY2054"],   # Physics 2 (choose w or without calc)
+            # ["PHY2049L", "PHY2054L"],
+            ["PHY2048|PHY2048L", "PHY2053|PHY2053L"],
+            ["PHY2049|PHY2049L", "PHY2054|PHY2054L"],
             ["ENC2210", "ENC3246"],
         ],
 
