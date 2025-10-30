@@ -467,52 +467,18 @@ const handlePriorityChange = (scheduleId, direction) => {
               <div className="info-tooltip">
                 <div className="tooltip-title">{course.code}</div>
                 <div className="tooltip-content">
-                  {loadingCourseInfo.has(course.code) ? (
-                    <div className="tooltip-row">Loading...</div>
-                  ) : courseInfo[course.code] ? (
-                    <>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Name: </span>{courseInfo[course.code].name}
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Credits: </span>{courseInfo[course.code].credits}
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Instructor: </span>{courseInfo[course.code].instructor || 'TBD'}
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Time: </span>{course.time}
-                      </div>
-                      {courseInfo[course.code].syllabus_url && (
-                        <div className="tooltip-row">
-                          <a
-                            href={courseInfo[course.code].syllabus_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="syllabus-link-small"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            View Syllabus →
-                          </a>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Name: </span>{course.name}
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Credits: </span>{course.credits}
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Instructor: </span>{course.instructor}
-                      </div>
-                      <div className="tooltip-row">
-                        <span className="tooltip-label">Time: </span>{course.time}
-                      </div>
-                    </>
-                  )}
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Name: </span>{course.name}
+                  </div>
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Credits: </span>{course.credits}
+                  </div>
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Instructor: </span>{course.instructor}
+                  </div>
+                  <div className="tooltip-row">
+                    <span className="tooltip-label">Time: </span>{course.time}
+                  </div>
                 </div>
               </div>
             </div>
@@ -589,7 +555,7 @@ const handlePriorityChange = (scheduleId, direction) => {
   >
     <button
       className="remove-course"
-      onClick={(e) => handleRemoveCourse(course.instanceId, e)}
+      onClick={(e) => handleRemoveCourse(course.code, e)}
     >
       ×
     </button>
