@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import React from "react";
@@ -171,7 +172,8 @@ export default function Scheduler() {
     if (timeIndex !== -1) {
       courseDays.forEach(day => {
         const key = `${day}-${startTime}`;
-        newSchedule[key] = course;
+        const instanceId = `${course.code}-${day}-${startTime}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+        newSchedule[key] = { ...course, instanceId, scheduledDay: day, scheduledTime: startTime };
       });
       
       setSchedule(newSchedule);
@@ -196,25 +198,54 @@ export default function Scheduler() {
   };
 
   const handleDrop = (day, time) => {
-    if (draggedCourse) {
-      const key = `${day}-${time}`;
-      setSchedule(prev => ({
+    if (!draggedCourse) return;
+    const key = `${day}-${time}`;
+    setSchedule(prev => {
+      const instanceId = `${draggedCourse.code}-${day}-${time}-${Date.now()}-${Math.random().toString(36).slice(2,6)}`;
+      return {
         ...prev,
-        [key]: draggedCourse
-      }));
-      setDraggedCourse(null);
-    }
+        [key]: { ...draggedCourse, instanceId, scheduledDay: day, scheduledTime: time }
+      };
+    });
+    setDraggedCourse(null);
   };
 
-  const handleRemoveCourse = (courseCode, e) => {
-    e.stopPropagation();
-    const newSchedule = { ...schedule };
-    Object.keys(newSchedule).forEach(key => {
-      if (newSchedule[key].code === courseCode) {
-        delete newSchedule[key];
+  const handleRemoveCourse = (instanceId, e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    setSchedule(prev => {
+      const newSchedule = { ...prev };
+      const courseToRemove = Object.values(newSchedule).find(
+        item => item.instanceId === instanceId
+      );
+
+      if (!courseToRemove) {
+        console.warn("Could not find course for instanceId", instanceId);
+        return prev;
       }
+
+      // match all blocks that have the same course code (and optional start time)
+      const { code, timeInfo } = courseToRemove;
+      const startTime = timeInfo?.startTime || courseToRemove.scheduledTime;
+
+      Object.keys(newSchedule).forEach(key => {
+        const item = newSchedule[key];
+        if (!item) return;
+
+        if (
+          item.code === code &&
+          (item.timeInfo?.startTime === startTime ||
+          item.scheduledTime === startTime)
+        ) {
+          delete newSchedule[key];
+        }
+      });
+
+      return newSchedule;
     });
-    setSchedule(newSchedule);
   };
 
   const handleClearSchedule = () => {
@@ -558,7 +589,7 @@ const handlePriorityChange = (scheduleId, direction) => {
   >
     <button
       className="remove-course"
-      onClick={(e) => handleRemoveCourse(course.code, e)}
+      onClick={(e) => handleRemoveCourse(course.instanceId, e)}
     >
       ×
     </button>
